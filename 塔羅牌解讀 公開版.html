@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>塔羅牌解讀</title>
+</head>
+<body>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@500;600;700&family=Noto+Sans+TC:wght@400;500;600&display=swap');
+
+:root{
+  --ink:#151024;
+  --ink-2:#1d1630;
+  --panel:#241c39;
+  --panel-2:#2c2244;
+  --line:rgba(191,157,102,0.22);
+  --gold:#bf9d66;
+  --gold-bright:#e0c188;
+  --rose:#a5687a;
+  --parchment:#ece3d2;
+  --muted:#9c90ae;
+  --up:#8fae8a;
+  --down:#b6767a;
+}
+
+*{box-sizing:border-box;}
+body{margin:0;}
+
+.tarot-app{
+  font-family:'Noto Sans TC', sans-serif;
+  color:var(--parchment);
+  background:
+    radial-gradient(ellipse at 20% -10%, rgba(191,157,102,0.10), transparent 55%),
+    radial-gradient(ellipse at 100% 10%, rgba(165,104,122,0.10), transparent 50%),
+    linear-gradient(180deg, var(--ink) 0%, var(--ink-2) 100%);
+  min-height:100vh;
+  padding:28px 18px 60px;
+}
+
+.tarot-shell{max-width:920px;margin:0 auto;}
+
+.tarot-header{text-align:center;margin-bottom:28px;}
+.tarot-header .eyebrow{
+  font-size:13px;letter-spacing:0.08em;color:var(--gold);margin-bottom:6px;
+}
+.tarot-header h1{
+  font-family:'Noto Serif TC',serif;font-weight:700;
+  font-size:clamp(28px,5vw,40px);margin:0 0 8px;color:var(--gold-bright);
+  letter-spacing:0.02em;
+}
+.tarot-header p{color:var(--muted);font-size:14px;margin:0;line-height:1.7;}
+
+.tarot-divider{
+  width:60px;height:1px;margin:18px auto;
+  background:linear-gradient(90deg,transparent,var(--gold),transparent);
+}
+
+.tarot-card-panel{
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:14px;
+  padding:22px 22px 24px;
+  margin-bottom:20px;
+}
+
+.tarot-card-panel h2{
+  font-family:'Noto Serif TC',serif;font-size:17px;font-weight:600;
+  color:var(--gold-bright);margin:0 0 14px;display:flex;align-items:center;gap:8px;
+}
+.tarot-card-panel h2 .step-icon{
+  width:22px;height:22px;flex:none;color:var(--gold);
+}
+
+.tarot-question textarea{
+  width:100%;min-height:64px;resize:vertical;
+  background:var(--ink-2);border:1px solid var(--line);border-radius:10px;
+  color:var(--parchment);font-family:'Noto Sans TC',sans-serif;font-size:15px;
+  padding:12px 14px;line-height:1.6;
+}
+.tarot-question textarea:focus{outline:none;border-color:var(--gold);}
+.tarot-question textarea::placeholder{color:var(--muted);}
+
+.spread-grid{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px;
+}
+.spread-option{
+  border:1px solid var(--line);background:var(--ink-2);border-radius:10px;
+  padding:13px 14px;cursor:pointer;transition:border-color .15s, background .15s;
+  text-align:left;
+}
+.spread-option:hover{border-color:var(--gold);}
+.spread-option.active{border-color:var(--gold);background:var(--panel-2);}
+.spread-option .sp-name{font-weight:600;font-size:14.5px;color:var(--parchment);display:block;margin-bottom:3px;}
+.spread-option .sp-count{font-size:12.5px;color:var(--muted);}
+
+.mode-toggle{display:flex;gap:8px;margin-bottom:16px;}
+.mode-btn{
+  flex:1;padding:10px 12px;border-radius:9px;border:1px solid var(--line);
+  background:var(--ink-2);color:var(--muted);cursor:pointer;font-size:14px;
+  font-family:'Noto Sans TC',sans-serif;transition:all .15s;
+}
+.mode-btn.active{border-color:var(--gold);color:var(--gold-bright);background:var(--panel-2);}
+
+.draw-btn{
+  width:100%;padding:13px;border-radius:10px;border:1px solid var(--gold);
+  background:linear-gradient(180deg,rgba(191,157,102,0.18),rgba(191,157,102,0.08));
+  color:var(--gold-bright);font-family:'Noto Serif TC',serif;font-weight:600;font-size:15.5px;
+  cursor:pointer;letter-spacing:0.03em;
+}
+.draw-btn:hover{background:rgba(191,157,102,0.26);}
+.draw-btn:disabled{opacity:0.4;cursor:not-allowed;}
+
+.manual-row{
+  display:flex;gap:8px;align-items:center;margin-bottom:9px;flex-wrap:wrap;
+}
+.manual-row .pos-label{
+  min-width:96px;font-size:13.5px;color:var(--gold-bright);font-weight:600;
+}
+.manual-row select{
+  background:var(--ink-2);border:1px solid var(--line);color:var(--parchment);
+  border-radius:8px;padding:8px 10px;font-family:'Noto Sans TC',sans-serif;font-size:13.5px;
+  flex:1;min-width:150px;
+}
+.manual-row select.orient-select{flex:none;min-width:88px;}
+.manual-row select:focus{outline:none;border-color:var(--gold);}
+
+.cards-area{margin-top:6px;}
+.cards-flow{display:flex;flex-wrap:wrap;gap:16px;justify-content:center;}
+
+.tcard{
+  width:118px;text-align:center;
+}
+.tcard .frame{
+  width:118px;height:172px;border-radius:11px;
+  background:linear-gradient(160deg,var(--panel-2),var(--ink-2));
+  border:1px solid var(--line);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:10px;padding:10px;position:relative;overflow:hidden;
+  transition:transform .25s;
+}
+.tcard.reversed .frame{transform:rotate(180deg);}
+.tcard .frame::before{
+  content:'';position:absolute;inset:5px;border:1px solid rgba(191,157,102,0.28);border-radius:7px;
+}
+.tcard .icon{width:30px;height:30px;color:var(--gold);}
+.tcard .cname{
+  font-family:'Noto Serif TC',serif;font-size:13px;font-weight:600;color:var(--parchment);
+  line-height:1.35;padding:0 4px;
+}
+.tcard .pos-tag{
+  margin-top:8px;font-size:12px;color:var(--gold);font-weight:600;
+}
+.tcard .orient-tag{
+  font-size:11.5px;margin-top:2px;
+}
+.tcard .orient-tag.up{color:var(--up);}
+.tcard .orient-tag.down{color:var(--down);}
+
+.reading-btn{
+  margin-top:20px;width:100%;padding:14px;border-radius:10px;border:1px solid var(--rose);
+  background:linear-gradient(180deg,rgba(165,104,122,0.20),rgba(165,104,122,0.08));
+  color:#e6c9d1;font-family:'Noto Serif TC',serif;font-weight:600;font-size:16px;cursor:pointer;
+}
+.reading-btn:disabled{opacity:0.4;cursor:not-allowed;}
+
+.reset-link{
+  display:block;text-align:center;margin-top:14px;color:var(--muted);
+  font-size:13px;background:none;border:none;cursor:pointer;text-decoration:underline;
+  font-family:'Noto Sans TC',sans-serif;
+}
+
+.loading-line{
+  text-align:center;color:var(--gold);font-size:14px;padding:16px 0;
+}
+
+.reading-output{margin-top:6px;}
+.reading-pos{
+  border-left:2px solid var(--gold);padding:4px 0 4px 14px;margin-bottom:16px;
+}
+.reading-pos .rp-head{
+  font-family:'Noto Serif TC',serif;color:var(--gold-bright);font-size:15px;font-weight:600;margin-bottom:5px;
+}
+.reading-pos .rp-card{font-size:12.5px;color:var(--muted);margin-bottom:6px;}
+.reading-pos .rp-text{font-size:14.5px;line-height:1.85;color:var(--parchment);white-space:pre-wrap;}
+
+.reading-summary{
+  margin-top:6px;padding-top:16px;border-top:1px dashed var(--line);
+}
+.reading-summary .rs-head{
+  font-family:'Noto Serif TC',serif;color:var(--rose);font-size:16px;font-weight:700;margin-bottom:8px;
+}
+.reading-summary .rs-text{font-size:14.5px;line-height:1.9;color:var(--parchment);white-space:pre-wrap;}
+
+@media (max-width:480px){
+  .tcard{width:98px;}
+  .tcard .frame{width:98px;height:146px;}
+}
+</style>
+
+<div class="tarot-app">
+  <div class="tarot-shell">
+
+    <div class="tarot-header">
+      <div class="eyebrow">TAROT · 塔羅解讀</div>
+      <h1>問卜之桌</h1>
+      <p>寫下你的提問，選擇牌陣，抽出屬於此刻的牌。</p>
+      <div class="tarot-divider"></div>
+    </div>
+
+    <div class="tarot-card-panel tarot-question">
+      <h2><svg class="step-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2l2.4 6.6L21 11l-6.6 2.4L12 20l-2.4-6.6L3 11l6.6-2.4z"/></svg>你想問什麼？</h2>
+      <textarea id="tq-question" placeholder="例如：這段感情接下來會如何發展？我該不該接受這份新工作？"></textarea>
+    </div>
+
+    <div class="tarot-card-panel">
+      <h2><svg class="step-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M9 4v16"/></svg>選擇牌陣</h2>
+      <div class="spread-grid" id="tq-spread-grid"></div>
+    </div>
+
+    <div class="tarot-card-panel">
+      <h2><svg class="step-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 19V5a2 2 0 012-2h9l5 5v11a2 2 0 01-2 2H6a2 2 0 01-2-2z"/></svg>抽牌方式</h2>
+      <div class="mode-toggle">
+        <button class="mode-btn active" id="tq-mode-auto">自動抽牌</button>
+        <button class="mode-btn" id="tq-mode-manual">手動輸入</button>
+      </div>
+
+      <div id="tq-auto-area">
+        <button class="draw-btn" id="tq-draw-btn">🂠　抽牌</button>
+      </div>
+
+      <div id="tq-manual-area" style="display:none;"></div>
+
+      <div class="cards-area" id="tq-cards-area"></div>
+
+      <button class="reading-btn" id="tq-reading-btn" style="display:none;">解讀這次占卜</button>
+      <div class="loading-line" id="tq-loading" style="display:none;">牌面正在被閱讀中…</div>
+      <button class="reset-link" id="tq-reset-btn" style="display:none;">重新占卜</button>
+    </div>
+
+    <div class="tarot-card-panel" id="tq-output-panel" style="display:none;">
+      <h2><svg class="step-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 3v3M12 18v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M3 12h3M18 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/><circle cx="12" cy="12" r="4"/></svg>解讀結果</h2>
+      <div class="reading-output" id="tq-output"></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+(function(){
+
+// ---------- 牌卡資料 ----------
+const MAJOR = [
+["愚者","新的開始、冒險、自由、天真","魯莽、猶豫不決、被忽視的風險"],
+["魔術師","創造力、行動力、資源整合、意志","操弄、才能被浪費、缺乏規劃"],
+["女祭司","直覺、潛意識、神秘、內在智慧","忽視直覺、秘密曝光、表裡不一"],
+["皇后","豐盛、滋養、創造、母性","停滯、過度依賴、缺乏自我照顧"],
+["皇帝","權威、秩序、掌控、穩定結構","專制、僵化、失去掌控"],
+["教皇","傳統、信念、指導、體制","反叛傳統、教條束縛、質疑權威"],
+["戀人","結合、選擇、和諧關係、價值觀契合","失衡的關係、猶豫不決、價值衝突"],
+["戰車","意志力、勝利、掌控方向、決心","失控、缺乏方向、內在衝突"],
+["力量","內在力量、溫柔堅定、耐心馴服","自我懷疑、失控的情緒、軟弱"],
+["隱者","內省、獨處、尋找真理、指引","孤立、逃避、拒絕求助"],
+["命運之輪","轉變、機運、循環、命運轉折","逆境、失控的變化、抗拒改變"],
+["正義","公平、真相、因果、決斷","不公、逃避責任、失衡的判斷"],
+["吊人","換位思考、暫停、犧牲、等待時機","徒勞的犧牲、停滯不前、抗拒改變"],
+["死神","結束、轉化、放下、重生","抗拒改變、停滯、未完成的結束"],
+["節制","平衡、調和、耐心、中庸之道","失衡、過猶不及、缺乏耐性"],
+["惡魔","束縛、慾望、物質誘惑、依附","掙脫束縛、覺察執念、釋放"],
+["塔","劇變、瓦解、真相揭露、突發衝擊","逃避崩塌、延遲的災難、內在動盪"],
+["星星","希望、療癒、信念、靈感","失望、信心動搖、與希望脫節"],
+["月亮","幻覺、潛意識、不安、模糊不清","真相浮現、走出迷霧、釋放恐懼"],
+["太陽","喜悅、成功、活力、清晰","暫時的陰霾、過度樂觀、遲來的喜悅"],
+["審判","覺醒、重生、回顧、召喚","自我懷疑、逃避覺醒、無法釋懷"],
+["世界","圓滿、完成、整合、成就","未竟之事、缺乏收尾、停滯的完成"]
+].map((c,i)=>({id:"major-"+i, name:c[0], suit:"major", up:c[1], rev:c[2], display:c[0]}));
+
+const SUITS = {
+  wands:{label:"權杖", theme:"火・行動、熱情、事業"},
+  cups:{label:"聖杯", theme:"水・情感、關係、直覺"},
+  swords:{label:"寶劍", theme:"風・思想、衝突、溝通"},
+  pentacles:{label:"錢幣", theme:"土・物質、財富、現實"}
+};
+
+const RANK_NAMES = ["首牌","二","三","四","五","六","七","八","九","十","侍者","騎士","皇后","國王"];
+
+const MINOR_DATA = {
+  wands:[
+    ["新機會、靈感湧現、行動的種子","猶豫不決、動力停滯"],
+    ["規劃未來、掌握大局、抉擇","缺乏計劃、恐懼未知"],
+    ["拓展、遠見、等待成果","延遲、缺乏遠見"],
+    ["慶祝、穩定的家庭、和諧","不穩定的基礎、延後的慶祝"],
+    ["競爭、衝突、意見不合","逃避衝突、內部紛爭化解"],
+    ["勝利、認可、自信","遲來的成功、自負、缺乏認同"],
+    ["堅持立場、防禦、挑戰","招架不住、放棄立場"],
+    ["快速進展、消息、行動加速","延誤、溝通受阻"],
+    ["堅韌、戒備、最後衝刺","疲憊、過度防衛"],
+    ["負擔、責任沉重、即將完成","卸下重擔、不堪重負而放棄"],
+    ["熱情探索、學習新事物、消息","缺乏方向、三分鐘熱度"],
+    ["衝動行動、冒險、熱情驅動","魯莽、半途而廢"],
+    ["自信、獨立、溫暖的領導力","自我懷疑、易怒、要求過多"],
+    ["遠見領導、果斷、企業家精神","專橫、衝動決策"]
+  ],
+  cups:[
+    ["情感的開始、愛、直覺覺醒","情感封閉、錯失的情感連結"],
+    ["連結、夥伴關係、相互吸引","失衡的關係、疏離"],
+    ["友誼、慶祝、群體支持","過度放縱、群體衝突"],
+    ["冷漠、沉思、錯失機會","重新覺察、走出麻木"],
+    ["失落、後悔、專注於失去","接受過去、重新振作"],
+    ["懷舊、童年回憶、純真","活在過去、需要放下"],
+    ["幻想、選擇太多、需要釐清","認清現實、做出決定"],
+    ["離開、尋求更深意義、放下","害怕改變、原地徘徊"],
+    ["滿足、願望實現、享受成果","表面的滿足、過度自滿"],
+    ["圓滿的家庭、情感和諧、幸福","家庭失和、理想破滅"],
+    ["情感的訊息、創意直覺、天真浪漫","情緒化、不成熟的表達"],
+    ["浪漫、理想主義、以情感為導向的行動","情緒起伏、不切實際"],
+    ["同理心、情感成熟、直覺敏銳","情緒氾濫、過度犧牲自己"],
+    ["情緒穩定、寬容、成熟的領導","情緒壓抑、操控他人情感"]
+  ],
+  swords:[
+    ["清晰的思路、真相、突破","混亂的思緒、誤解"],
+    ["猶豫不決、僵局、逃避抉擇","資訊過載、被迫做決定"],
+    ["心碎、傷痛、背叛","療癒中、走出傷痛"],
+    ["休息、恢復、暫停行動","強迫的休息、精疲力竭"],
+    ["衝突、贏了面子輸了裡子","尋求和解、放下勝負心"],
+    ["過渡、離開困境、邁向平靜","未解決的問題、抗拒改變"],
+    ["欺瞞、策略性撤退、隱瞞","坦白、良心發現"],
+    ["受限、自我設限、無助感","掙脫束縛、找回力量"],
+    ["焦慮、失眠、憂慮","走出恐懼、面對焦慮的根源"],
+    ["徹底結束、背叛、觸底","緩慢的恢復、抗拒接受結束"],
+    ["好奇心、警覺、求知慾","出言不遜、缺乏計劃的行動"],
+    ["果斷行動、直言不諱、雷厲風行","魯莽衝動、缺乏耐性"],
+    ["獨立、理性、直率的溝通","冷酷、過度批判"],
+    ["邏輯清晰、權威、公正的判斷","濫用權力、冷漠無情"]
+  ],
+  pentacles:[
+    ["新機會、物質豐盛的開端","錯失機會、財務不穩"],
+    ["平衡多項事務、彈性應變","失衡、難以兼顧"],
+    ["團隊合作、技能受肯定","缺乏協調、品質不佳"],
+    ["掌控、安全感、物質保守","過度執著、貪婪"],
+    ["匱乏、經濟困境、孤立無援","走出困境、尋得支援"],
+    ["慷慨、分享資源、公平交易","不對等的給予、施捨的條件"],
+    ["耐心等待收成、評估投資","缺乏耐性、投資回報不如預期"],
+    ["精進技藝、專注學習、勤奮","敷衍了事、缺乏企圖心"],
+    ["獨立、富足、自我成就","過度依賴他人、揮霍"],
+    ["傳承、家族財富、長遠穩定","家族紛爭、財務風險"],
+    ["務實學習、新的計劃、腳踏實地","缺乏規劃、三心二意"],
+    ["穩健、負責、按部就班","停滯不前、過度謹慎"],
+    ["務實照顧、豐盛的滋養、居家","過度操勞、忽略自我"],
+    ["財富穩固、務實領導、慷慨","過度重視物質、頑固"]
+  ]
+};
+
+const MINOR = [];
+Object.keys(MINOR_DATA).forEach(suit=>{
+  MINOR_DATA[suit].forEach((m,i)=>{
+    const rankName = RANK_NAMES[i];
+    const name = SUITS[suit].label + rankName;
+    MINOR.push({id:suit+"-"+i, name:name, suit:suit, up:m[0], rev:m[1], display:name});
+  });
+});
+
+const DECK = MAJOR.concat(MINOR);
+const DECK_BY_ID = {};
+DECK.forEach(c=>DECK_BY_ID[c.id]=c);
+
+// ---------- 牌陣資料 ----------
+const SPREADS = {
+  single:{name:"單張牌陣", positions:["當下指引"]},
+  three:{name:"三張牌陣（過去・現在・未來）", positions:["過去","現在","未來"]},
+  choice:{name:"二選一牌陣", positions:["選項A・現況","選項A・結果","選項B・現況","選項B・結果","整體建議"]},
+  celtic:{name:"凱爾特十字", positions:["現況","阻礙／助力","潛意識根基","過去","意識目標","近期未來","自身態度","外在影響","希望或恐懼","最終結果"]}
+};
+
+// ---------- SVG 圖示 ----------
+function suitIcon(suit){
+  if(suit==="major") return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M12 2l2.9 7.1L22 12l-7.1 2.9L12 22l-2.9-7.1L2 12l7.1-2.9z"/></svg>';
+  if(suit==="wands") return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M12 21V6"/><circle cx="12" cy="4" r="2.2"/><path d="M9 9l6 0M8.5 12.5l7 0"/></svg>';
+  if(suit==="cups") return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M6 4h12l-1.2 8.5a4.8 4.8 0 01-9.6 0L6 4z"/><path d="M12 17.3V21M8 21h8"/></svg>';
+  if(suit==="swords") return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M12 2v14"/><path d="M8 6h8M9 16l3 4 3-4"/></svg>';
+  if(suit==="pentacles") return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><circle cx="12" cy="12" r="9"/><path d="M12 5.5l2 6.2h6.5l-5.3 3.8 2 6.2-5.2-3.8-5.2 3.8 2-6.2-5.3-3.8h6.5z"/></svg>';
+  return "";
+}
+
+// ---------- 狀態 ----------
+let state = {
+  spreadKey: "three",
+  mode: "auto",
+  drawn: null // array of {position, card, reversed}
+};
+
+// ---------- DOM ----------
+const $ = sel => document.querySelector(sel);
+const spreadGrid = $("#tq-spread-grid");
+const modeAutoBtn = $("#tq-mode-auto");
+const modeManualBtn = $("#tq-mode-manual");
+const autoArea = $("#tq-auto-area");
+const manualArea = $("#tq-manual-area");
+const cardsArea = $("#tq-cards-area");
+const drawBtn = $("#tq-draw-btn");
+const readingBtn = $("#tq-reading-btn");
+const loadingLine = $("#tq-loading");
+const resetBtn = $("#tq-reset-btn");
+const outputPanel = $("#tq-output-panel");
+const outputEl = $("#tq-output");
+const questionEl = $("#tq-question");
+
+function renderSpreadGrid(){
+  spreadGrid.innerHTML = "";
+  Object.keys(SPREADS).forEach(key=>{
+    const sp = SPREADS[key];
+    const div = document.createElement("div");
+    div.className = "spread-option" + (key===state.spreadKey ? " active":"");
+    div.innerHTML = '<span class="sp-name">'+sp.name+'</span><span class="sp-count">'+sp.positions.length+' 張牌</span>';
+    div.addEventListener("click", ()=>{
+      state.spreadKey = key;
+      state.drawn = null;
+      renderSpreadGrid();
+      renderManualArea();
+      renderCards();
+      renderReadingControls();
+    });
+    spreadGrid.appendChild(div);
+  });
+}
+
+function renderManualArea(){
+  const sp = SPREADS[state.spreadKey];
+  manualArea.innerHTML = "";
+  sp.positions.forEach((pos,i)=>{
+    const row = document.createElement("div");
+    row.className = "manual-row";
+    const cardOptions = DECK.map(c=>'<option value="'+c.id+'">'+c.display+'</option>').join("");
+    row.innerHTML =
+      '<span class="pos-label">'+pos+'</span>'+
+      '<select data-idx="'+i+'" class="card-select"><option value="">— 選擇牌卡 —</option>'+cardOptions+'</select>'+
+      '<select data-idx="'+i+'" class="orient-select"><option value="up">正位</option><option value="rev">逆位</option></select>';
+    manualArea.appendChild(row);
+  });
+  const confirmBtn = document.createElement("button");
+  confirmBtn.className = "draw-btn";
+  confirmBtn.textContent = "確認牌面";
+  confirmBtn.addEventListener("click", ()=>{
+    const selects = manualArea.querySelectorAll(".card-select");
+    const orients = manualArea.querySelectorAll(".orient-select");
+    const drawn = [];
+    let ok = true;
+    sp.positions.forEach((pos,i)=>{
+      const cardId = selects[i].value;
+      if(!cardId){ ok = false; return; }
+      drawn.push({position:pos, card:DECK_BY_ID[cardId], reversed: orients[i].value==="rev"});
+    });
+    if(!ok){ alert("請為每個位置選擇一張牌"); return; }
+    state.drawn = drawn;
+    renderCards();
+    renderReadingControls();
+  });
+  manualArea.appendChild(confirmBtn);
+}
+
+function shuffleDraw(n){
+  const pool = DECK.slice();
+  for(let i=pool.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [pool[i],pool[j]] = [pool[j],pool[i]];
+  }
+  return pool.slice(0,n).map(c=>({card:c, reversed: Math.random()<0.5}));
+}
+
+drawBtn.addEventListener("click", ()=>{
+  const sp = SPREADS[state.spreadKey];
+  const picks = shuffleDraw(sp.positions.length);
+  state.drawn = sp.positions.map((pos,i)=>({position:pos, card:picks[i].card, reversed:picks[i].reversed}));
+  renderCards();
+  renderReadingControls();
+});
+
+function renderCards(){
+  cardsArea.innerHTML = "";
+  if(!state.drawn) return;
+  const flow = document.createElement("div");
+  flow.className = "cards-flow";
+  state.drawn.forEach(d=>{
+    const el = document.createElement("div");
+    el.className = "tcard" + (d.reversed ? " reversed":"");
+    el.innerHTML =
+      '<div class="frame"><div class="icon">'+suitIcon(d.card.suit)+'</div><div class="cname">'+d.card.display+'</div></div>'+
+      '<div class="pos-tag">'+d.position+'</div>'+
+      '<div class="orient-tag '+(d.reversed?'down':'up')+'">'+(d.reversed?'逆位':'正位')+'</div>';
+    flow.appendChild(el);
+  });
+  cardsArea.appendChild(flow);
+}
+
+function renderReadingControls(){
+  if(state.drawn){
+    readingBtn.style.display = "block";
+    resetBtn.style.display = "block";
+  } else {
+    readingBtn.style.display = "none";
+    resetBtn.style.display = "none";
+  }
+  outputPanel.style.display = "none";
+  outputEl.innerHTML = "";
+}
+
+modeAutoBtn.addEventListener("click", ()=>{
+  state.mode = "auto";
+  modeAutoBtn.classList.add("active");
+  modeManualBtn.classList.remove("active");
+  autoArea.style.display = "block";
+  manualArea.style.display = "none";
+  state.drawn = null;
+  renderCards();
+  renderReadingControls();
+});
+
+modeManualBtn.addEventListener("click", ()=>{
+  state.mode = "manual";
+  modeManualBtn.classList.add("active");
+  modeAutoBtn.classList.remove("active");
+  autoArea.style.display = "none";
+  manualArea.style.display = "block";
+  state.drawn = null;
+  renderManualArea();
+  renderCards();
+  renderReadingControls();
+});
+
+resetBtn.addEventListener("click", ()=>{
+  state.drawn = null;
+  renderCards();
+  renderReadingControls();
+});
+
+// ---------- 內建解讀（不需外部服務） ----------
+const POS_LEAD={"過去":"這是背景與起因","現在":"這是目前的狀態","未來":"這是若維持目前走向，可能出現的發展","當下指引":"這是此刻給你的提醒","現況":"這是目前的狀況","阻礙／助力":"這是正在影響你的助力或阻礙","潛意識根基":"這是內心深處的根基","意識目標":"這是你有意識追求的方向","近期未來":"這是近期的走向","自身態度":"這是你自己的態度","外在影響":"這是來自外界的影響","希望或恐懼":"這是你內心的期待或擔憂","最終結果":"這是整體走下去的結果","整體建議":"這是整體給你的建議"};
+const NUM_MEAN=["開始與起點","抉擇與平衡","初步成果與合作","穩定與秩序","衝突與變動","分享與調和","內省與奮鬥","重新評估與行動","成果與飽和","完成與轉化"];
+const COURT_ROLE=["仍在學習、帶來消息的人或階段","向外追求、行動力強的人或階段","內在成熟、懂得照顧的人","成熟穩重、掌握全局的人"];
+const SUIT_PEOPLE={wands:"熱情直率、行動派",cups:"細膩敏感、重感情",swords:"理性精準、重邏輯",pentacles:"務實穩健、重現實"};
+const TOPICS=[{k:/感情|愛情|戀愛|喜歡|對象|伴侶|復合|曖昧|婚|分手/,suit:"cups",name:"感情"},{k:/工作|事業|升遷|面試|轉職|換工作|主管|創業|職場/,suit:"wands",name:"工作"},{k:/錢|財|投資|收入|薪|買房|存款/,suit:"pentacles",name:"財務"},{k:/考試|學業|論文|溝通|談判|官司|合約/,suit:"swords",name:"思考與溝通"}];
+const HARD=["惡魔","塔","聖杯五","寶劍三","寶劍九","寶劍十","錢幣五"];
+const SUIT_TONE={wands:"權杖較多，主題偏向行動、熱情與事業。",cups:"聖杯較多，主題偏向情感與人際。",swords:"寶劍較多，主題偏向思考、衝突與溝通，留意言語與心結。",pentacles:"錢幣較多，主題偏向金錢、工作與現實面。"};
+const esc=s=>String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+
+function interpretOne(d){
+  const c=d.card, rev=d.reversed, hard=HARD.indexOf(c.display)>=0;
+  const lead=POS_LEAD[d.position]||("這是「"+d.position+"」的位置");
+  let t=lead+"，出現「"+c.display+"」（"+(rev?"逆位":"正位")+"），關鍵意象是："+(rev?c.rev:c.up)+"。";
+  if(c.suit==="major"){ t+="大牌偏向內在心態與人生課題。"; const mi=+c.id.split("-")[1]; if(rev&&mi>0) t+="逆位也可能表示上一張「"+MAJOR[mi-1].name+"」的課題還沒學完，可以回頭檢視。"; }
+  else{
+    const idx=+c.id.split("-")[1];
+    t+= idx>=10 ? "這張宮廷牌代表"+COURT_ROLE[idx-10]+"，特質偏"+SUIT_PEOPLE[c.suit]+"，可能是某個人，也可能是你在此事中的態度。" : "這張牌偏向"+SUITS[c.suit].theme+"的具體情境，數字"+(idx+1)+"象徵"+NUM_MEAN[idx]+"。";
+  }
+  if(rev) t+= hard ? "此牌牌義偏艱難，逆位時請對照上述意象，觀察是壓力減輕，還是被延後。" : "逆位可能代表這股能量不足、過度、被壓抑，或是尚待學習。";
+  else if(hard) t+="這張牌即使正位也偏艱難，建議把它當作需要正視的提醒。";
+  return t;
+}
+
+function summarize(q){
+  const dr=state.drawn, n=dr.length, up=dr.filter(d=>!d.reversed).length, rv=n-up;
+  const major=dr.filter(d=>d.card.suit==="major").length;
+  const hard=dr.filter(d=>HARD.indexOf(d.card.display)>=0).length;
+  const score=(up-rv)/n-(hard/n)*0.5;
+  const tone=score>0.4?1:(score<-0.2?-1:0);
+  const qs="「"+esc(q)+"」";
+  let t="本次共 "+n+" 張牌，正位 "+up+" 張、逆位 "+rv+" 張。";
+  t+= tone===1 ? "整體偏向順利，答案傾向肯定，但仍請留意牌面提到的細節。"
+    : tone===0 ? "正逆位並陳，答案可能肯定也可能否定，關鍵在於你如何處理逆位牌所點出的部分。"
+    : "逆位或艱難的牌較多，顯示目前有阻礙或需要調整的地方，適合放慢腳步、先處理根本問題。";
+  if(n>1){
+    t+= major*2>=n ? "大牌佔多數，這件事牽動你的內在與心態，值得從價值觀與信念去思考。"
+      : major===0 ? "全是小牌，重點在日常生活中的具體安排與行動。"
+      : "大小牌混合，兼有內在心態與具體事件兩個面向。";
+  }
+  const sc={}, nc={};
+  dr.forEach(d=>{
+    if(d.card.suit==="major") return;
+    sc[d.card.suit]=(sc[d.card.suit]||0)+1;
+    const idx=+d.card.id.split("-")[1];
+    if(idx<10) nc[idx]=(nc[idx]||0)+1;
+  });
+  const topSuit=Object.keys(sc).sort((x,y)=>sc[y]-sc[x])[0];
+  if(topSuit && sc[topSuit]>=2) t+=SUIT_TONE[topSuit];
+  const rep=Object.keys(nc).filter(k=>nc[k]>=2)[0];
+  if(rep!==undefined) t+="多張牌出現「"+NUM_MEAN[+rep]+"」的數字能量，這個主題值得特別留意。";
+  const topic=TOPICS.filter(x=>x.k.test(q))[0];
+  if(topic){
+    const hit=sc[topic.suit]||0;
+    t+="你問的是"+topic.name+"相關的問題，";
+    t+= hit>0 ? SUITS[topic.suit].label+"在牌面中出現 "+hit+" 張，這個主題與牌面有直接連結。" : "牌面中沒有出現對應的"+SUITS[topic.suit].label+"，這件事可能更多受到心態或其他面向影響。";
+    if(topic.suit==="cups" && (sc.swords||0)>0) t+="同時出現寶劍，感情或人際中要留意言語、猜疑或衝突。";
+  }
+  if(state.spreadKey==="choice" && n>=4){
+    const sv=d=>(d.reversed?-1:1)-(HARD.indexOf(d.card.display)>=0?1:0);
+    const sa=sv(dr[1]), sb=sv(dr[3]);
+    t+="比較兩個選項的結果牌，"+(sa>sb?"選項A的結果牌較順暢。":sa<sb?"選項B的結果牌較順暢。":"兩個選項的結果牌差不多，取捨取決於你更在意哪些條件。")+"這只是參考，仍要回到你真正在意的條件。";
+  }
+  t+= tone===1 ? "針對你問的"+qs+"，可以把握目前的順勢，主動邁出下一步，同時保留彈性。"
+    : tone===0 ? "針對你問的"+qs+"，建議先釐清逆位牌所指出的不足，再做決定。"
+    : "針對你問的"+qs+"，建議先不要急著下結論，優先處理阻礙，等條件改善再行動。";
+  t+="塔羅是協助你整理思緒的工具，不是定論，最後的決定仍在你手上。";
+  return t;
+}
+
+function qNotes(q){
+  let x="";
+  if(/彩券|樂透|中獎|疾病|診斷|癌|手術|開刀/.test(q)) x+="塔羅不適合預測彩券號碼，也不能取代醫療、法律等專業意見。";
+  if(q.length<8) x+="小提醒：問題越具體越好，例如加上時間範圍（未來三個月到半年）。";
+  return x;
+}
+readingBtn.addEventListener("click", ()=>{
+  const question=questionEl.value.trim();
+  if(!question){ alert("請先寫下你想問的問題"); return; }
+  if(!state.drawn) return;
+  outputEl.innerHTML="";
+  if(/自殺|輕生|想死|不想活/.test(question)){
+    outputEl.innerHTML='<div class="reading-summary"><div class="rs-head">先照顧自己</div><div class="rs-text">如果你正感到痛苦、有傷害自己的念頭，請先聯絡身邊信任的人，或撥打安心專線 1925（24 小時）。牌可以晚點再抽。</div></div>';
+    outputPanel.style.display="block";
+    return;
+  }
+  const notes=qNotes(question);
+  if(notes){ const nb=document.createElement("div"); nb.className="reading-summary"; nb.innerHTML='<div class="rs-text">'+esc(notes)+'</div>'; outputEl.appendChild(nb); }
+  state.drawn.forEach(d=>{
+    const label=d.card.display+"・"+(d.reversed?"逆位":"正位");
+    const block=document.createElement("div");
+    block.className="reading-pos";
+    block.innerHTML='<div class="rp-head">'+esc(d.position)+'</div><div class="rp-card">'+esc(label)+'</div><div class="rp-text">'+esc(interpretOne(d))+'</div>';
+    outputEl.appendChild(block);
+  });
+  const sum=document.createElement("div");
+  sum.className="reading-summary";
+  sum.innerHTML='<div class="rs-head">整體解讀</div><div class="rs-text">'+summarize(question)+'</div>';
+  outputEl.appendChild(sum);
+  outputPanel.style.display="block";
+});
+
+// ---------- 初始化 ----------
+renderSpreadGrid();
+renderManualArea();
+manualArea.style.display = "none";
+renderCards();
+renderReadingControls();
+
+})();
+</script>
+
+</body>
+</html>

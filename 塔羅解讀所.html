@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="塔羅解讀所" />
+<meta name="theme-color" content="#0d0a1a" />
+<title>塔羅解讀所</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+<style>
+  html, body { margin: 0; padding: 0; background: #0d0a1a; }
+  #root { min-height: 100vh; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel" data-presets="react">
+const { useState, useMemo } = React;
+
+/* ---------------------------------------------------------
+   資料：大阿爾克那 22 張
+--------------------------------------------------------- */
+const MAJOR = [
+  ["愚者", "新的開始、冒險、自由奔放", "魯莽、缺乏規劃、猶豫不決"],
+  ["魔術師", "創造力、行動力、資源整合", "操弄、能力未發揮、投機取巧"],
+  ["女祭司", "直覺、潛意識、內在智慧", "忽視直覺、隱藏的秘密、疏離"],
+  ["皇后", "豐盛、滋養、創造與美", "過度依賴、停滯、忽略自我照顧"],
+  ["皇帝", "秩序、權威、穩固結構", "專制、僵化、失去掌控"],
+  ["教皇", "傳統、信仰、體制與教導", "反傳統、教條束縛、固執己見"],
+  ["戀人", "連結、選擇、和諧關係", "失衡、猶豫不決、價值衝突"],
+  ["戰車", "意志力、勝利、堅定前進", "失控、方向迷失、內耗"],
+  ["力量", "溫柔的力量、耐心、內在勇氣", "自我懷疑、失去信心、壓抑情緒"],
+  ["隱士", "內省、獨處、尋求真理", "孤立、逃避、迷失方向"],
+  ["命運之輪", "轉變、機運、循環流動", "逆境、抗拒改變、失去掌控"],
+  ["正義", "公平、真相、因果平衡", "不公、逃避責任、失衡的判斷"],
+  ["倒吊人", "換個角度、暫停、犧牲換取領悟", "停滯不前、抗拒改變、徒勞的犧牲"],
+  ["死神", "結束與重生、蛻變、放下", "抗拒改變、停滯、未完成的告別"],
+  ["節制", "平衡、調和、耐心整合", "失衡、過猶不及、缺乏耐性"],
+  ["惡魔", "束縛、慾望、物質誘惑", "掙脫束縛、覺察、重獲自由"],
+  ["高塔", "劇變、瓦解、真相揭露", "逃避崩壞、延遲的災難、內在動盪"],
+  ["星星", "希望、療癒、信心", "失望、信心動搖、迷失方向"],
+  ["月亮", "不確定、潛意識、幻象與恐懼", "迷霧漸散、釋放恐懼、看清真相"],
+  ["太陽", "喜悅、活力、成功與清晰", "暫時的低潮、過度樂觀、遲來的喜悅"],
+  ["審判", "覺醒、重生、回應召喚", "自我懷疑、逃避覺察、猶豫不前"],
+  ["世界", "完成、圓滿、整合成就", "未竟之事、拖延、缺乏完結感"],
+].map(([name, up, rev], i) => ({
+  id: `major-${i}`,
+  arcana: "major",
+  num: i,
+  name,
+  up,
+  rev,
+}));
+
+/* ---------------------------------------------------------
+   資料：小阿爾克那 56 張（四花色 x 14 張）
+--------------------------------------------------------- */
+const SUITS = [
+  {
+    key: "wands",
+    name: "權杖",
+    element: "火",
+    theme: "行動與熱情",
+    color: "#c96b3f",
+    ranks: [
+      ["Ace", "新的靈感與行動力", "動力受阻、靈感枯竭"],
+      ["2", "規劃未來、做出抉擇", "缺乏規劃、猶豫不前"],
+      ["3", "拓展視野、等待成果", "計畫延遲、缺乏遠見"],
+      ["4", "慶祝、穩固的基礎", "動盪的和諧、慶祝延後"],
+      ["5", "競爭、意見分歧", "化解衝突、內部消耗"],
+      ["6", "勝利、獲得認可", "遲來的勝利、信心受挫"],
+      ["7", "堅持立場、面對挑戰", "寡不敵眾、放棄防守"],
+      ["8", "快速進展、消息傳來", "延誤、溝通受阻"],
+      ["9", "堅韌、最後的防線", "疲憊、過度防備"],
+      ["10", "負擔、責任沉重", "放下重擔、學習分工"],
+      ["侍者", "熱情的學習者、新消息", "三分鐘熱度、計畫不周"],
+      ["騎士", "衝勁十足、追求冒險", "魯莽躁進、半途而廢"],
+      ["皇后", "自信、充滿魅力的行動者", "過度強勢、缺乏耐性"],
+      ["國王", "領導力、願景與魄力", "專斷、濫用權力"],
+    ],
+  },
+  {
+    key: "cups",
+    name: "聖杯",
+    element: "水",
+    theme: "情感與關係",
+    color: "#4f7cac",
+    ranks: [
+      ["Ace", "情感的開端、心靈滿溢", "情感封閉、錯失連結"],
+      ["2", "深刻連結、互相吸引", "關係失衡、誤解"],
+      ["3", "歡聚、友誼與慶祝", "過度享樂、群體疏離"],
+      ["4", "冷漠、對現況不滿", "重新燃起興趣、走出倦怠"],
+      ["5", "失落、後悔", "接受過去、重新出發"],
+      ["6", "懷舊、純真的回憶", "困於過去、逃避現實"],
+      ["7", "選擇太多、幻想", "看清幻象、做出決定"],
+      ["8", "離開、追尋更深的意義", "猶豫不決、停滯不前"],
+      ["9", "滿足、心願達成", "表面的滿足、過度自滿"],
+      ["10", "圓滿、家庭和諧", "關係破裂、期望落空"],
+      ["侍者", "溫柔敏感的信使、直覺訊息", "情緒化、不成熟的表達"],
+      ["騎士", "浪漫、追隨內心感受", "多愁善感、不切實際"],
+      ["皇后", "同理心、情感的智慧", "情緒氾濫、過度犧牲"],
+      ["國王", "情緒穩定、包容的領導", "情感壓抑、操控他人情緒"],
+    ],
+  },
+  {
+    key: "swords",
+    name: "寶劍",
+    element: "風",
+    theme: "思維與衝突",
+    color: "#8892a6",
+    ranks: [
+      ["Ace", "清晰的洞見、真相浮現", "混亂的思緒、誤判情勢"],
+      ["2", "僵局、艱難的抉擇", "資訊過載、逃避決定"],
+      ["3", "心碎、痛苦的真相", "走出傷痛、逐漸療癒"],
+      ["4", "休息、暫時抽離", "被迫重新投入、耗竭"],
+      ["5", "衝突、贏了面子輸了裡子", "化解爭端、放下對立"],
+      ["6", "過渡、走向平靜", "滯留原地、抗拒改變"],
+      ["7", "策略、隱瞞真相", "東窗事發、良心不安"],
+      ["8", "受限、自我設限", "掙脫束縛、找回自由"],
+      ["9", "焦慮、夜不成眠", "走出恐懼、逐漸釋懷"],
+      ["10", "谷底、痛苦的結束", "緩慢復原、重新振作"],
+      ["侍者", "好奇心、敏銳的觀察", "八卦、言語傷人"],
+      ["騎士", "果斷行動、直言不諱", "魯莽衝動、缺乏考量"],
+      ["皇后", "理性獨立、清晰的判斷", "尖銳苛刻、情感疏離"],
+      ["國王", "邏輯權威、公正的決策", "操弄言詞、冷酷無情"],
+    ],
+  },
+  {
+    key: "pentacles",
+    name: "錢幣",
+    element: "土",
+    theme: "現實與物質",
+    color: "#b89b4f",
+    ranks: [
+      ["Ace", "實質的機會、新的資源", "錯失機會、規劃不周"],
+      ["2", "調度資源、保持彈性", "失衡、應接不暇"],
+      ["3", "合作、專業累積", "團隊失調、標準不一"],
+      ["4", "守成、安全感", "過度執著、害怕失去"],
+      ["5", "困頓、資源匱乏", "走出困境、獲得援助"],
+      ["6", "分享、公平的給予", "施與受失衡、暗藏條件"],
+      ["7", "耐心等待、評估成果", "急於求成、缺乏耐性"],
+      ["8", "專注磨練、精益求精", "敷衍了事、缺乏動力"],
+      ["9", "富足、獨立自足", "表面富裕、過度倚賴他人"],
+      ["10", "傳承、長遠的富足", "家族紛爭、根基不穩"],
+      ["侍者", "務實的學習者、新機會的消息", "計畫不切實際、拖延"],
+      ["騎士", "穩健踏實、按部就班", "固執僵化、停滯不前"],
+      ["皇后", "務實溫暖、照顧與豐盛", "過度操勞、忽略自我"],
+      ["國王", "成就、穩健的財富掌控", "貪婪、過度重視物質"],
+    ],
+  },
+];
+
+const MINOR = SUITS.flatMap((suit) =>
+  suit.ranks.map(([rank, up, rev], i) => ({
+    id: `${suit.key}-${i}`,
+    arcana: "minor",
+    suitKey: suit.key,
+    suitName: suit.name,
+    color: suit.color,
+    rank,
+    name: `${suit.name}${rank}`,
+    up,
+    rev,
+  }))
+);
+
+const DECK = [...MAJOR, ...MINOR];
+const POSITIONS = [
+  { key: "past", label: "過去", hint: "形塑此刻的背景" },
+  { key: "present", label: "現在", hint: "眼下最需留意的課題" },
+  { key: "future", label: "未來", hint: "延續下去的走向" },
+];
+
+/* ---------------------------------------------------------
+   小圖示
+--------------------------------------------------------- */
+function SuitGlyph({ suitKey, size = 22, color = "#c9a961" }) {
+  const common = { width: size, height: size, viewBox: "0 0 24 24", fill: "none" };
+  switch (suitKey) {
+    case "wands":
+      return (
+        <svg {...common}>
+          <path d="M12 2c1.2 2 1.6 3.6.6 5.2-.6 1-1.6 1.4-1.6 2.6 0 3.4 0 9.6 0 12.2" stroke={color} strokeWidth="1.4" strokeLinecap="round" />
+          <path d="M9.4 9.6c-1.4-1-2.6-.6-3.6.4M14.6 9.6c1.4-1 2.6-.6 3.6.4" stroke={color} strokeWidth="1.1" strokeLinecap="round" />
+        </svg>
+      );
+    case "cups":
+      return (
+        <svg {...common}>
+          <path d="M6 4h12l-1.4 8.4A4.6 4.6 0 0 1 12 16a4.6 4.6 0 0 1-4.6-3.6L6 4Z" stroke={color} strokeWidth="1.3" strokeLinejoin="round" />
+          <path d="M12 16v3.6M8.4 21.6h7.2" stroke={color} strokeWidth="1.3" strokeLinecap="round" />
+        </svg>
+      );
+    case "swords":
+      return (
+        <svg {...common}>
+          <path d="M12 2v15.4M9 5.4 12 2l3 3.4" stroke={color} strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M8 14.4h8M9.6 17.4h4.8" stroke={color} strokeWidth="1.2" strokeLinecap="round" />
+          <path d="M12 17.4v4.4" stroke={color} strokeWidth="1.3" strokeLinecap="round" />
+        </svg>
+      );
+    case "pentacles":
+      return (
+        <svg {...common}>
+          <circle cx="12" cy="12" r="9" stroke={color} strokeWidth="1.3" />
+          <path
+            d="M12 5.5 13.9 10h4.6l-3.7 2.7 1.4 4.5L12 14.5l-3.9 2.7 1.4-4.5L5.8 10h4.6L12 5.5Z"
+            stroke={color}
+            strokeWidth="1"
+            strokeLinejoin="round"
+          />
+        </svg>
+      );
+    default:
+      return null;
+  }
+}
+
+function MajorGlyph({ size = 26, color = "#c9a961" }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="12" r="6.6" stroke={color} strokeWidth="1.1" />
+      <path
+        d="M12 2v3.2M12 18.8V22M2 12h3.2M18.8 12H22M4.9 4.9l2.3 2.3M16.8 16.8l2.3 2.3M19.1 4.9l-2.3 2.3M7.2 16.8l-2.3 2.3"
+        stroke={color}
+        strokeWidth="0.9"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+/* ---------------------------------------------------------
+   單張卡片（背面 / 正面）
+--------------------------------------------------------- */
+function CardBack({ onClick, label, hint }) {
+  return (
+    <button className="card-slot back" onClick={onClick} type="button">
+      <div className="back-pattern">
+        <div className="back-ring" />
+        <div className="back-ring small" />
+        <div className="back-star">✦</div>
+      </div>
+      <div className="slot-caption">
+        <span className="slot-label">{label}</span>
+        <span className="slot-hint">{hint}</span>
+      </div>
+    </button>
+  );
+}
+
+function CardFace({ card, reversed, label, revealed, onClick }) {
+  return (
+    <div
+      className={`card-slot face ${revealed ? "revealed" : ""} ${reversed ? "is-reversed" : ""}`}
+      onClick={onClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") onClick();
+      }}
+    >
+      <div className="face-inner">
+        <div className="face-top">
+          {card.arcana === "major" ? (
+            <span className="face-num">{String(card.num).padStart(2, "0")}</span>
+          ) : (
+            <span className="face-num">{card.rank}</span>
+          )}
+        </div>
+        <div className="face-glyph">
+          {card.arcana === "major" ? (
+            <MajorGlyph color="#c9a961" />
+          ) : (
+            <SuitGlyph suitKey={card.suitKey} color={card.color} />
+          )}
+        </div>
+        <div className="face-name">{card.name}</div>
+        {reversed && <div className="rev-badge">逆位</div>}
+      </div>
+      <div className="slot-caption">
+        <span className="slot-label">{label}</span>
+      </div>
+    </div>
+  );
+}
+
+/* ---------------------------------------------------------
+   選牌 Modal
+--------------------------------------------------------- */
+function PickerModal({ onClose, onConfirm }) {
+  const [tab, setTab] = useState("major");
+  const [query, setQuery] = useState("");
+  const [selected, setSelected] = useState(null);
+  const [reversed, setReversed] = useState(false);
+
+  const tabs = [
+    { key: "major", label: "大阿爾克那" },
+    ...SUITS.map((s) => ({ key: s.key, label: s.name })),
+  ];
+
+  const pool = useMemo(() => {
+    let list = tab === "major" ? MAJOR : MINOR.filter((c) => c.suitKey === tab);
+    if (query.trim()) {
+      list = list.filter((c) => c.name.includes(query.trim()));
+    }
+    return list;
+  }, [tab, query]);
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-head">
+          <h3>輸入你抽到的牌</h3>
+          <button className="icon-btn" onClick={onClose} aria-label="關閉" type="button">
+            ✕
+          </button>
+        </div>
+
+        <input
+          className="search-input"
+          placeholder="搜尋牌名，例如：戀人、聖杯三"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+        />
+
+        <div className="tab-row">
+          {tabs.map((t) => (
+            <button
+              key={t.key}
+              type="button"
+              className={`tab-btn ${tab === t.key ? "active" : ""}`}
+              onClick={() => setTab(t.key)}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="pool-grid">
+          {pool.map((c) => (
+            <button
+              key={c.id}
+              type="button"
+              className={`pool-item ${selected?.id === c.id ? "selected" : ""}`}
+              onClick={() => setSelected(c)}
+            >
+              {c.name}
+            </button>
+          ))}
+          {pool.length === 0 && <div className="empty-hint">找不到符合的牌名</div>}
+        </div>
+
+        <div className="orient-row">
+          <span className="orient-label">牌的方向</span>
+          <div className="orient-toggle">
+            <button
+              type="button"
+              className={!reversed ? "active" : ""}
+              onClick={() => setReversed(false)}
+            >
+              正位
+            </button>
+            <button
+              type="button"
+              className={reversed ? "active" : ""}
+              onClick={() => setReversed(true)}
+            >
+              逆位
+            </button>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          className="confirm-btn"
+          disabled={!selected}
+          onClick={() => selected && onConfirm(selected, reversed)}
+        >
+          確認這張牌
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ---------------------------------------------------------
+   解讀文字生成
+--------------------------------------------------------- */
+function buildReading(question, draws) {
+  const lines = POSITIONS.map((pos, i) => {
+    const d = draws[i];
+    const meaning = d.reversed ? d.card.rev : d.card.up;
+    const tag = d.reversed ? "（逆位）" : "（正位）";
+    let sentence;
+    if (pos.key === "past") {
+      sentence = `回顧過去，${d.card.name}${tag}浮現，指向「${meaning}」。這是形塑你目前處境的重要背景，也是你此刻感受的起點。`;
+    } else if (pos.key === "present") {
+      sentence = `此刻，你正處在${d.card.name}${tag}的能量之中：「${meaning}」。這正是你眼下最需要正視的課題。`;
+    } else {
+      sentence = `若順著目前的方向走下去，${d.card.name}${tag}所指向的「${meaning}」，可能是接下來會迎向的走勢——塔羅指出的是趨勢，最終的選擇仍在你手中。`;
+    }
+    return { ...pos, card: d.card, reversed: d.reversed, meaning, sentence };
+  });
+
+  const majors = draws.filter((d) => d.card.arcana === "major").length;
+  const reversedCount = draws.filter((d) => d.reversed).length;
+  const suitCounts = {};
+  draws.forEach((d) => {
+    if (d.card.arcana === "minor") {
+      suitCounts[d.card.suitKey] = (suitCounts[d.card.suitKey] || 0) + 1;
+    }
+  });
+  const dominantSuit = Object.entries(suitCounts).sort((a, b) => b[1] - a[1])[0];
+  const dominantSuitObj = dominantSuit ? SUITS.find((s) => s.key === dominantSuit[0]) : null;
+
+  let synthesis = `針對你的提問「${question || "這件事"}」，這次的三張牌`;
+  if (majors >= 2) {
+    synthesis += `出現了${majors}張大阿爾克那，代表這件事對你來說份量不輕，牽動的是人生層次的課題，而不只是日常的小事。`;
+  } else if (majors === 1) {
+    synthesis += `出現了一張大阿爾克那，說明其中有一個關鍵轉折點，值得你特別留意。`;
+  } else {
+    synthesis += `全部由小阿爾克那組成，反映的多是日常、具體、可以馬上著手調整的細節。`;
+  }
+
+  if (dominantSuitObj && dominantSuit[1] >= 2) {
+    synthesis += `同時，${dominantSuitObj.name}（${dominantSuitObj.element}元素・${dominantSuitObj.theme}）的能量特別集中，這件事的核心很可能落在「${dominantSuitObj.theme}」上。`;
+  }
+
+  if (reversedCount === 0) {
+    synthesis += `三張牌都是正位，能量表現得直接、外顯，事情大致會依你能感受到的方向發展。`;
+  } else if (reversedCount === 3) {
+    synthesis += `三張牌全數逆位，提醒你有些狀況可能被壓抑、延遲或尚未浮上檯面，值得多向內探問，而不急著往外行動。`;
+  } else {
+    synthesis += `其中有${reversedCount}張逆位，代表部分能量還在醞釀、卡關或需要被重新調整，別忽略牌陣裡這些比較安靜的訊號。`;
+  }
+
+  return { lines, synthesis };
+}
+
+/* ---------------------------------------------------------
+   主應用程式
+--------------------------------------------------------- */
+function TarotReader() {
+  const [question, setQuestion] = useState("");
+  const [draws, setDraws] = useState([null, null, null]);
+  const [pickerIndex, setPickerIndex] = useState(null);
+  const [revealed, setRevealed] = useState(false);
+
+  const allFilled = draws.every(Boolean);
+  const reading = useMemo(
+    () => (allFilled && revealed ? buildReading(question, draws) : null),
+    [allFilled, revealed, question, draws]
+  );
+
+  function handleConfirm(card, reversed) {
+    const next = [...draws];
+    next[pickerIndex] = { card, reversed };
+    setDraws(next);
+    setPickerIndex(null);
+    setRevealed(false);
+  }
+
+  function randomizeAll() {
+    const shuffled = [...DECK].sort(() => Math.random() - 0.5);
+    const next = shuffled.slice(0, 3).map((card) => ({
+      card,
+      reversed: Math.random() < 0.35,
+    }));
+    setDraws(next);
+    setRevealed(false);
+  }
+
+  function resetAll() {
+    setDraws([null, null, null]);
+    setRevealed(false);
+    setQuestion("");
+  }
+
+  return (
+    <div className="tarot-app">
+      <div className="wrap">
+        <div className="eyebrow">T A R O T &nbsp; R E A D I N G</div>
+        <h1 className="title">塔羅解讀所</h1>
+        <p className="subtitle">寫下你的提問，抽三張牌，讓過去、現在、未來給你一點方向</p>
+
+        <div className="panel">
+          <h2>第一步・你的提問</h2>
+          <p className="desc">越具體的問題，牌面的回應也會越清晰。</p>
+          <textarea
+            className="question-input"
+            placeholder="例如：我目前這段感情接下來會如何發展？"
+            value={question}
+            onChange={(e) => setQuestion(e.target.value)}
+          />
+        </div>
+
+        <div className="panel">
+          <h2>入門牌陣・過去・現在・未來</h2>
+          <p className="desc">
+            這是最經典的三張牌陣：先看事情從哪裡來、再看現在的處境，最後看下去的走向。
+            實體抽牌後，點卡背輸入你抽到的牌與正逆位；若手邊沒有牌，也可以按「隨機抽三張」。
+          </p>
+
+          <div className="spread-row">
+            {POSITIONS.map((pos, i) => {
+              const d = draws[i];
+              return d ? (
+                <CardFace
+                  key={pos.key}
+                  card={d.card}
+                  reversed={d.reversed}
+                  label={pos.label}
+                  revealed={revealed}
+                  onClick={() => setPickerIndex(i)}
+                />
+              ) : (
+                <CardBack
+                  key={pos.key}
+                  label={pos.label}
+                  hint={pos.hint}
+                  onClick={() => setPickerIndex(i)}
+                />
+              );
+            })}
+          </div>
+
+          <div className="action-row">
+            <button type="button" className="ghost-btn" onClick={randomizeAll}>
+              隨機抽三張
+            </button>
+            <button
+              type="button"
+              className="gold-btn"
+              disabled={!allFilled}
+              onClick={() => setRevealed(true)}
+            >
+              為我解讀
+            </button>
+            <button type="button" className="ghost-btn" onClick={resetAll}>
+              重新開始
+            </button>
+          </div>
+
+          {allFilled && !revealed && (
+            <p className="desc" style={{ textAlign: "center", marginTop: 14 }}>
+              三張牌都已輸入，按「為我解讀」查看分析。若要更換某張牌，直接點擊那張牌重新選擇。
+            </p>
+          )}
+
+          {reading && (
+            <div className="reading-block">
+              {reading.lines.map((l) => (
+                <div className="reading-item" key={l.key}>
+                  <span className="rlabel">
+                    {l.label} · {l.card.name}
+                    {l.reversed ? "（逆位）" : "（正位）"}
+                  </span>
+                  <p>{l.sentence}</p>
+                </div>
+              ))}
+              <div className="synthesis">
+                <span className="rlabel">整體指引</span>
+                <p style={{ margin: "6px 0 0" }}>{reading.synthesis}</p>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {pickerIndex !== null && (
+        <PickerModal onClose={() => setPickerIndex(null)} onConfirm={handleConfirm} />
+      )}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<TarotReader />);
+</script>
+<style>
+  * { box-sizing: border-box; }
+  @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600&family=Noto+Serif+TC:wght@500;700&family=Noto+Sans+TC:wght@400;500&display=swap');
+
+  .tarot-app {
+    min-height: 100vh;
+    background:
+      radial-gradient(ellipse at 20% -10%, rgba(201,169,97,0.10), transparent 45%),
+      radial-gradient(ellipse at 80% 110%, rgba(94,66,140,0.25), transparent 50%),
+      #0d0a1a;
+    color: #ece6f5;
+    font-family: 'Noto Sans TC', sans-serif;
+    padding: 48px 20px 80px;
+  }
+  .wrap { max-width: 860px; margin: 0 auto; }
+
+  .eyebrow {
+    font-family: 'Cinzel', serif;
+    letter-spacing: 0.35em;
+    font-size: 12px;
+    color: #c9a961;
+    text-align: center;
+    margin-bottom: 10px;
+  }
+  h1.title {
+    font-family: 'Noto Serif TC', serif;
+    text-align: center;
+    font-size: 34px;
+    font-weight: 700;
+    margin: 0 0 6px;
+    background: linear-gradient(180deg, #f3e9c9, #c9a961);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .subtitle {
+    text-align: center;
+    color: #9c8fb0;
+    font-size: 14px;
+    margin-bottom: 40px;
+  }
+
+  .panel {
+    background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0));
+    border: 1px solid rgba(201,169,97,0.25);
+    border-radius: 18px;
+    padding: 24px;
+    margin-bottom: 28px;
+  }
+  .panel h2 {
+    font-family: 'Noto Serif TC', serif;
+    font-size: 17px;
+    margin: 0 0 4px;
+    color: #f3e9c9;
+  }
+  .panel .desc { color: #9c8fb0; font-size: 13px; margin-bottom: 14px; }
+
+  textarea.question-input {
+    width: 100%;
+    min-height: 84px;
+    background: rgba(0,0,0,0.25);
+    border: 1px solid rgba(201,169,97,0.3);
+    border-radius: 12px;
+    color: #ece6f5;
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: 15px;
+    padding: 14px;
+    resize: vertical;
+  }
+  textarea.question-input:focus { outline: 2px solid #c9a961; outline-offset: 1px; }
+
+  .spread-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-top: 8px;
+  }
+  @media (max-width: 620px) {
+    .spread-row { grid-template-columns: 1fr; }
+  }
+
+  .card-slot {
+    position: relative;
+    aspect-ratio: 3 / 4.6;
+    border-radius: 14px;
+    border: 1px solid rgba(201,169,97,0.4);
+    background: linear-gradient(160deg, #241a3d, #150f28);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: inherit;
+    font-family: inherit;
+    padding: 14px 10px 12px;
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+  }
+  .card-slot.back:hover { transform: translateY(-3px); box-shadow: 0 10px 24px rgba(0,0,0,0.35); }
+  .card-slot.face { cursor: pointer; }
+  .card-slot.face:hover { transform: translateY(-3px); box-shadow: 0 10px 24px rgba(0,0,0,0.35); }
+
+  .back-pattern { position: relative; width: 64px; height: 64px; margin-bottom: 14px; }
+  .back-ring {
+    position: absolute; inset: 0;
+    border: 1px solid rgba(201,169,97,0.55);
+    border-radius: 50%;
+  }
+  .back-ring.small { inset: 12px; border-color: rgba(201,169,97,0.35); }
+  .back-star {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    color: #c9a961; font-size: 20px;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .card-slot.back .back-star { animation: twinkle 3.2s ease-in-out infinite; }
+  }
+  @keyframes twinkle { 0%,100% { opacity: 0.55; } 50% { opacity: 1; } }
+
+  .slot-caption { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .slot-label { font-family: 'Noto Serif TC', serif; font-size: 14px; color: #f3e9c9; }
+  .slot-hint { font-size: 11px; color: #7c7092; }
+
+  .face-inner { display: flex; flex-direction: column; align-items: center; gap: 10px; flex: 1; justify-content: center; position: relative; }
+  .face.is-reversed .face-glyph { transform: rotate(180deg); }
+  .face-num { font-family: 'Cinzel', serif; font-size: 12px; letter-spacing: 0.15em; color: #c9a961; }
+  .face-name { font-family: 'Noto Serif TC', serif; font-size: 15px; text-align: center; color: #f3e9c9; }
+  .rev-badge {
+    position: absolute; top: -4px; right: -2px;
+    background: rgba(179,85,95,0.85);
+    color: #fff; font-size: 10px; padding: 2px 6px;
+    border-radius: 999px; letter-spacing: 0.05em;
+  }
+  .card-slot.face.revealed { animation: reveal 0.5s ease; }
+  @keyframes reveal { from { transform: rotateY(90deg); opacity: 0.3; } to { transform: rotateY(0deg); opacity: 1; } }
+
+  .action-row { display: flex; gap: 12px; justify-content: center; margin-top: 22px; flex-wrap: wrap; }
+  button.ghost-btn, button.gold-btn, button.confirm-btn {
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: 14px;
+    border-radius: 999px;
+    padding: 11px 22px;
+    cursor: pointer;
+    border: 1px solid rgba(201,169,97,0.5);
+    background: transparent;
+    color: #f3e9c9;
+  }
+  button.gold-btn, button.confirm-btn {
+    background: linear-gradient(180deg, #e2c27d, #c9a961);
+    color: #1a1330;
+    border: none;
+    font-weight: 600;
+  }
+  button.gold-btn:disabled, button.confirm-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  button.ghost-btn:hover { background: rgba(201,169,97,0.1); }
+
+  .reading-block { border-top: 1px dashed rgba(201,169,97,0.3); margin-top: 22px; padding-top: 18px; }
+  .reading-item { margin-bottom: 16px; }
+  .reading-item .rlabel {
+    font-family: 'Cinzel', serif; font-size: 11px; letter-spacing: 0.2em;
+    color: #c9a961; margin-bottom: 4px; display: block;
+  }
+  .reading-item p { margin: 0; line-height: 1.9; font-size: 14.5px; color: #ece6f5; }
+  .synthesis {
+    background: rgba(201,169,97,0.08);
+    border: 1px solid rgba(201,169,97,0.3);
+    border-radius: 12px;
+    padding: 16px;
+    margin-top: 10px;
+    line-height: 1.9;
+    font-size: 14.5px;
+  }
+  .synthesis .rlabel { color: #c9a961; }
+
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(5,3,12,0.72);
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px; z-index: 50;
+  }
+  .modal {
+    background: #17112a;
+    border: 1px solid rgba(201,169,97,0.35);
+    border-radius: 18px;
+    padding: 22px;
+    width: 100%;
+    max-width: 480px;
+    max-height: 86vh;
+    display: flex;
+    flex-direction: column;
+  }
+  .modal-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  .modal-head h3 { font-family: 'Noto Serif TC', serif; margin: 0; font-size: 17px; color: #f3e9c9; }
+  .icon-btn { background: none; border: none; color: #9c8fb0; font-size: 16px; cursor: pointer; }
+
+  .search-input {
+    width: 100%; padding: 10px 12px; border-radius: 10px;
+    border: 1px solid rgba(201,169,97,0.3); background: rgba(0,0,0,0.25);
+    color: #ece6f5; margin-bottom: 12px; font-size: 14px;
+  }
+  .tab-row { display: flex; gap: 6px; overflow-x: auto; margin-bottom: 12px; padding-bottom: 2px; }
+  .tab-btn {
+    flex: none; padding: 6px 12px; border-radius: 999px; font-size: 12.5px;
+    border: 1px solid rgba(201,169,97,0.3); background: transparent; color: #cabfe0; cursor: pointer;
+  }
+  .tab-btn.active { background: #c9a961; color: #1a1330; border-color: #c9a961; font-weight: 600; }
+
+  .pool-grid {
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;
+    overflow-y: auto; padding-right: 4px; margin-bottom: 14px; flex: 1; min-height: 120px;
+  }
+  .pool-item {
+    text-align: left; padding: 9px 10px; border-radius: 8px; font-size: 13.5px;
+    border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03);
+    color: #ece6f5; cursor: pointer;
+  }
+  .pool-item.selected { border-color: #c9a961; background: rgba(201,169,97,0.18); }
+  .empty-hint { grid-column: 1 / -1; color: #7c7092; font-size: 13px; text-align: center; padding: 20px 0; }
+
+  .orient-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .orient-label { font-size: 13px; color: #9c8fb0; }
+  .orient-toggle { display: flex; gap: 6px; }
+  .orient-toggle button {
+    padding: 7px 14px; border-radius: 999px; font-size: 13px; cursor: pointer;
+    border: 1px solid rgba(201,169,97,0.4); background: transparent; color: #cabfe0;
+  }
+  .orient-toggle button.active { background: #c9a961; color: #1a1330; font-weight: 600; border-color: #c9a961; }
+
+  .confirm-btn { width: 100%; padding: 12px; }
+</style>
+</body>
+</html>
